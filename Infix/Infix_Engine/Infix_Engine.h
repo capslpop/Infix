@@ -13,13 +13,14 @@
 #include <fstream>
 
 #define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 #include <glm/glm.hpp>
 
 // image loading
 #define STB_IMAGE_IMPLEMENTATION
 #include "Includes/stb_image.h"
 
-#define NDEBUG
+//#define NDEBUG
 
 #ifdef NDEBUG
 const bool enableValidationLayers = false;

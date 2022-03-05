@@ -49,14 +49,17 @@ const int MAX_FRAMES_IN_FLIGHT = 2; // number of frames that should be processed
 #include "Context/Device_Context.h"
 #include "Context/Application_Context.h"
 #include "GraphicsCode/Shaders.h"
+
 #include "Context/Swap_Chain.h"
 #include "Context/Command_Pool.h"
-#include "Context/Command_Buffer.h"
-#include "Context/Sync_Object.h"
+
 #include "Context/Memory_Context/Buffer.h"
 #include "Context/Memory_Context/Circular_Buffer.h"
 #include "Context/Memory_Context/Texture_Context.h"
 #include "Context/Memory_Context/Unifrorm_Buffer.h"
+
+#include "Context/Command_Buffer.h"
+#include "Context/Sync_Object.h"
 
 
 //************************************************
@@ -70,18 +73,21 @@ public:
 	~Graphics();
 
     void drawFrame();
+    void recreateFrame();
 
     MainWindow mainWindow;
     ApplicationContext applicationContext;
     Debug debug;
     DeviceContext deviceContext;
+    //DescriptorSetLayout descriptorSetLayout;
+    UniformBuffer uniformBuffer;
+
     SwapChain swapChain;
     CommandPool commandPool;
 
     CircularBuffer circularBuffer;
     TextureContext textureContext;
-    UniformBuffer uniformBuffer;
-
+    //
     CommandBuffer commandBuffer;
     SyncObject syncObject;
 
@@ -93,14 +99,16 @@ Graphics::Graphics() :
     applicationContext(),
     debug(applicationContext.instance),
     deviceContext(applicationContext.instance, mainWindow.window),
-    swapChain(&deviceContext, mainWindow.window),
+
+    uniformBuffer(deviceContext.device, deviceContext.physicalDevice),
+
+    swapChain(&deviceContext, mainWindow.window, uniformBuffer.descriptorSetLayout),
     commandPool(&deviceContext),
 
     circularBuffer(),
     textureContext(deviceContext.physicalDevice, deviceContext.device, &commandPool),
-    uniformBuffer(deviceContext.device, deviceContext.physicalDevice),
 
-    commandBuffer(&swapChain, &deviceContext, &commandPool),
+    commandBuffer(&swapChain, &deviceContext, &commandPool, &uniformBuffer),
     syncObject(deviceContext.device, swapChain.swapChainImages)
 {
 }
@@ -118,24 +126,20 @@ void Graphics::drawFrame()
     VkResult result = vkAcquireNextImageKHR(deviceContext.device, swapChain.swapChain, UINT64_MAX,
         syncObject.imageAvailableSemaphores[syncObject.currentFrame], VK_NULL_HANDLE, &imageIndex);
     
-    printf(" %i ", imageIndex);
-    
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-        swapChain.recreateSwapChain();
-        uniformBuffer.cleanupUniformBuffers();
-        uniformBuffer.createUniformBuffers();
+        recreateFrame();
         return;
     }
     else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
         throw std::runtime_error("failed to acquire swap chain image!");
     }
 
+    uniformBuffer.updataUniformBuffer(syncObject.currentFrame);
+
     vkResetFences(deviceContext.device, 1, &syncObject.inFlightFences[syncObject.currentFrame]);
 
     vkResetCommandBuffer(commandBuffer.commandBuffers[syncObject.currentFrame], /*VkCommandBufferResetFlagBits*/ 0);
-    commandBuffer.recordCommandBuffer(commandBuffer.commandBuffers[syncObject.currentFrame], imageIndex);
-
-    uniformBuffer.updataUniformBuffer(imageIndex);
+    commandBuffer.recordCommandBuffer(commandBuffer.commandBuffers[syncObject.currentFrame], imageIndex, syncObject.currentFrame);
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -172,17 +176,23 @@ void Graphics::drawFrame()
     result = vkQueuePresentKHR(deviceContext.presentQueue, &presentInfo);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || mainWindow.frameBufferResized) {
-        printf("1");
         mainWindow.frameBufferResized = false;
-        swapChain.recreateSwapChain();
-        uniformBuffer.cleanupUniformBuffers();
-        uniformBuffer.createUniformBuffers();
+        recreateFrame();
     }
     else if (result != VK_SUCCESS) {
         throw std::runtime_error("failed to present swap chain image!");
     }
 
     syncObject.currentFrame = (syncObject.currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+}
+
+void Graphics::recreateFrame()
+{
+    swapChain.recreateSwapChain();
+    //uniformBuffer.cleanupUniformBuffers();
+    //uniformBuffer.createUniformBuffers();
+    //uniformBuffer.createDescriptorPool();
+    //uniformBuffer.createDescriptorSet();
 }
 
 void MainWindow::frameBufferResizedCallback(GLFWwindow* window, int width, int height)

@@ -8,7 +8,7 @@
 class SwapChain
 {
 public:
-	SwapChain(DeviceContext *in_deviceContext, GLFWwindow* in_window);
+    SwapChain(DeviceContext* in_deviceContext, GLFWwindow* in_window, VkDescriptorSetLayout in_descriptorSetLayout);
 	~SwapChain();
 
     void cleanupSwapChain();
@@ -36,12 +36,14 @@ private:
 
     DeviceContext* deviceContext;
     GLFWwindow* window;
+    VkDescriptorSetLayout descriptorSetLayout;
 };
 
-SwapChain::SwapChain(DeviceContext* in_deviceContext, GLFWwindow* in_window)
+SwapChain::SwapChain(DeviceContext* in_deviceContext, GLFWwindow* in_window, VkDescriptorSetLayout in_descriptorSetLayout)
 {
     deviceContext = in_deviceContext;
     window = in_window;
+    descriptorSetLayout = in_descriptorSetLayout;
 
     createSwapChain();
     createImageViews();
@@ -269,9 +271,8 @@ void SwapChain::createGraphicsPipeline()
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = 0;
-    pipelineLayoutInfo.setLayoutCount = 0; // Optional
-    pipelineLayoutInfo.pSetLayouts = nullptr; // Optional
+    pipelineLayoutInfo.setLayoutCount = 1;
+    pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
     pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
     pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 

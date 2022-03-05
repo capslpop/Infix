@@ -2,18 +2,23 @@
 
 set(COMPILE_SHADERS ON)
 
-add_executable (Infix "Infix.cpp" "Includes/stb_image.h" "Infix_Engine/Infix_Core/Display/Graphics/Graphics.h" "Infix_Engine/Infix_Core/Display/Display.h"  "Infix_Engine/Infix_Core/Display/Graphics/Context/Swap_Chain.h" "Infix_Engine/Infix_Core/Display/Graphics/Context/Device_Context.h" "Infix_Engine/Infix_Core/Display/Graphics/Context/Command_Buffer.h" "Infix_Engine/Infix_Core/Display/Graphics/Debug/Debug.h" "Infix_Engine/Infix_Core/Display/Graphics/Context/Application_Context.h" "Infix_Engine/Infix_Core/Display/Graphics/Context/Sync_Object.h" "Infix_Engine/Infix_Core/Display/Graphics/Context/Memory_Context/Circular_Buffer.h" "Infix_Engine/Infix_Core/Display/Graphics/Context/Memory_Context/Texture_Context.h" "Infix_Engine/Infix_Core/Display/Graphics/Context/Memory_Context/Buffer.h" "Infix_Engine/Infix_Core/Display/Graphics/Context/Memory_Context/Unifrorm_Buffer.h")
+add_executable (Infix "Infix.cpp" "Includes/stb_image.h" "Infix_Engine/Infix_Core/Display/Graphics/Graphics.h" "Infix_Engine/Infix_Core/Display/Display.h"  "Infix_Engine/Infix_Core/Display/Graphics/Context/Swap_Chain.h" "Infix_Engine/Infix_Core/Display/Graphics/Context/Device_Context.h" "Infix_Engine/Infix_Core/Display/Graphics/Context/Command_Buffer.h" "Infix_Engine/Infix_Core/Display/Graphics/Debug/Debug.h" "Infix_Engine/Infix_Core/Display/Graphics/Context/Application_Context.h" "Infix_Engine/Infix_Core/Display/Graphics/Context/Sync_Object.h" "Infix_Engine/Infix_Core/Display/Graphics/Context/Memory_Context/Circular_Buffer.h" "Infix_Engine/Infix_Core/Display/Graphics/Context/Memory_Context/Texture_Context.h" "Infix_Engine/Infix_Core/Display/Graphics/Context/Memory_Context/Buffer.h" "Infix_Engine/Infix_Core/Display/Graphics/Context/Memory_Context/Unifrorm_Buffer.h" )
 # download and install vcpkg for windows development
 # also CMakeSettings.json needs manual path to vcpkg
 # change "C:\\Users\\johnw\\OneDrive\\Documents\\Vcpkg\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake"
 # to the corrent file path to vcpkg
 
-find_package(glfw3 CONFIG REQUIRED)
-find_package(glm CONFIG REQUIRED)
+
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+add_subdirectory("Includes/glfw-3.3.6")
+
+add_subdirectory("Includes/glm-master")
+
 find_package(Vulkan REQUIRED)
 
-
-target_link_libraries(Infix PRIVATE glfw glm Vulkan::Vulkan)
+target_link_libraries(Infix PRIVATE glfw glm::glm Vulkan::Vulkan)
 
 if(WIN32 AND COMPILE_SHADERS)
 	# copy shaders file to output file:

@@ -7,25 +7,29 @@
 class CommandBuffer
 {
 public:
-	CommandBuffer(SwapChain* in_swapChain, DeviceContext* in_deviceContext, CommandPool* in_commandPool);
+	CommandBuffer(SwapChain* in_swapChain, DeviceContext* in_deviceContext,
+        CommandPool* in_commandPool, UniformBuffer* in_uniformBuffer);
 	~CommandBuffer();
 
     std::vector<VkCommandBuffer> commandBuffers;
 
-    void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+    void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, size_t currentFrame);
 private:
     void createCommandBuffers();
 
     SwapChain *swapChain;
     DeviceContext *deviceContext;
     CommandPool* commandPool;
+    UniformBuffer *uniformBuffer;
 };
 
-CommandBuffer::CommandBuffer(SwapChain *in_swapChain, DeviceContext *in_deviceContext, CommandPool *in_commandPool)
+CommandBuffer::CommandBuffer(SwapChain *in_swapChain, DeviceContext *in_deviceContext,
+    CommandPool *in_commandPool, UniformBuffer *in_uniformBuffer)
 {
     swapChain = in_swapChain;
     deviceContext = in_deviceContext;
     commandPool = in_commandPool;
+    uniformBuffer = in_uniformBuffer;
 
     createCommandBuffers();
 }
@@ -49,7 +53,7 @@ void CommandBuffer::createCommandBuffers() {
     }
 }
 
-void CommandBuffer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
+void CommandBuffer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, size_t currentFrame) {
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
@@ -70,8 +74,12 @@ void CommandBuffer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t 
 
     vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, swapChain->graphicsPipeline);
-    vkCmdDraw(commandBuffer, 6, 1, 0, 0);
+        
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, swapChain->graphicsPipeline);
+
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, swapChain->pipelineLayout, 0, 1, &uniformBuffer->descriptorSets[currentFrame], 0, nullptr);
+
+        vkCmdDraw(commandBuffer, 6, 1, 0, 0);
 
     vkCmdEndRenderPass(commandBuffer);
 

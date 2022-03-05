@@ -19,7 +19,7 @@ private:
 	VkDeviceMemory textureImageMemory;
 	VkImageView textureImageView;
 	VkSampler textureSampler;
-
+	 
 	VkPhysicalDevice physicalDevice;
 	VkDevice device;
 
